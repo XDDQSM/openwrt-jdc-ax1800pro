@@ -68,7 +68,7 @@ jobs:
         $GITHUB_WORKSPACE/$DIY_P2_SH
 
     - name: SSH connection to Actions
-      uses: P33M/debugger-action@master
+      uses: mxschmitt/action-tmate@v3
       if: (github.event.inputs.ssh == 'true')
 
     - name: Download package
@@ -87,7 +87,7 @@ jobs:
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 || make -j1 V=s
         echo "status=success" >> $GITHUB_OUTPUT
-        grep -E"^CONFIG_TARGET.*DEVICE.*=y" .config | head -n 1 | awk -F'["]' '{print $2}' > FIRMWARE_NAME
+        grep -E "^CONFIG_TARGET.*DEVICE.*=y" .config | head -n 1 | awk -F'["=]' '{print $2}' > FIRMWARE_NAME
         [ -s FIRMWARE_NAME ] && echo "FIRMWARE_NAME=_$(cat FIRMWARE_NAME)" >> $GITHUB_ENV
         echo "FILE_DATE=$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
 
@@ -144,14 +144,7 @@ jobs:
         files: ${{ env.FIRMWARE }}/*
 
     - name: Delete workflow runs
-      uses: GitRML/delete-workflow-runs@main
+      uses: Mattraks/delete-workflow-runs@v2
       with:
         retain_days: 1
         keep_minimum_runs: 3
-
-    - name: Remove old Releases
-      uses: dev-droids/delete-older-releases@v0.2.1
-      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
-      with:
-        keep_latest: 5
-        delete_tags: true
