@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Free Disk Space
       uses: jlumbroso/free-disk-space@main
@@ -58,18 +58,15 @@ jobs:
         echo "CONFIG_TARGET_qualcommax_ipq60xx=y" >> .config
         echo "CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_jdcloud_ax1800-pro=y" >> .config
         
-        # 2. 解决 mwan3 与 dnsmasq 的冲突 (这是 Exit Code 2 的元凶)
-        # 移除基础版 dnsmasq
+        # 2. 解决 mwan3 与 dnsmasq 的冲突
         sed -i 's/^CONFIG_PACKAGE_dnsmasq=y/# CONFIG_PACKAGE_dnsmasq is not set/' .config
-        # 启用 dnsmasq-full 并开启 ipset 支持
         echo "CONFIG_PACKAGE_dnsmasq-full=y" >> .config
         echo "CONFIG_PACKAGE_dnsmasq_full_ipset=y" >> .config
-        # 启用 mwan3 及依赖
         echo "CONFIG_PACKAGE_mwan3=y" >> .config
         echo "CONFIG_PACKAGE_ip-full=y" >> .config
         echo "CONFIG_PACKAGE_ipset=y" >> .config
         
-        # 3. 启用 USB 5G 模组支持 (移花接木，防止驱动打架)
+        # 3. 启用 USB 5G 模组支持
         echo "CONFIG_PACKAGE_kmod-usb-net-qmi-wwan=y" >> .config
         echo "CONFIG_PACKAGE_kmod-usb-net-cdc-mbim=y" >> .config
         echo "CONFIG_PACKAGE_kmod-usb-serial-option=y" >> .config
@@ -94,11 +91,10 @@ jobs:
       run: |
         cd openwrt
         echo -e "$(nproc) thread compile"
-        # 首次尝试多线程编译
         make -j$(nproc) || make -j1 V=s
         
     - name: Upload Firmware
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: OpenWrt_Firmware
         path: openwrt/bin/targets/
