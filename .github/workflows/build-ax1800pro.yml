@@ -43,19 +43,38 @@ jobs:
 
     - name: Load Custom Config
       run: |
-        # 如果有自定义配置文件就用，没有就生成默认的
         [ -e .config ] || make defconfig
         
-        # 确保选中正确的设备
-        sed -i 's/^CONFIG_PACKAGE_dnsmasq=y/# CONFIG_PACKAGE_dnsmasq is not set/' .config
+        # === 基础 LuCI 环境 (防依赖丢失) ===
+        echo "CONFIG_PACKAGE_luci=y" >> .config
+        echo "CONFIG_LUCI_LANG_zh_Hans=y" >> .config
+        echo "CONFIG_PACKAGE_luci-compat=y" >> .config
+        echo "CONFIG_PACKAGE_libiwinfo-lua=y" >> .config
+        
+        # === 核心插件强制注入 ===
+        echo "CONFIG_PACKAGE_luci-app-openclash=y" >> .config
+        echo "CONFIG_PACKAGE_luci-app-store=y" >> .config
+        echo "CONFIG_PACKAGE_luci-app-lucky=y" >> .config
+        
+        # === mwan3 & dnsmasq-full 冲突终极解决方案 ===
+        # 先把原来的 dnsmasq 删干净
+        sed -i '/CONFIG_PACKAGE_dnsmasq=y/d' .config
+        sed -i '/CONFIG_PACKAGE_dnsmasq_full/d' .config
+        echo "# CONFIG_PACKAGE_dnsmasq is not set" >> .config
+        # 显式启用 full 版本
         echo "CONFIG_PACKAGE_dnsmasq-full=y" >> .config
         echo "CONFIG_PACKAGE_dnsmasq_full_ipset=y" >> .config
+        echo "CONFIG_PACKAGE_dnsmasq_full_conntrack=y" >> .config
+        echo "CONFIG_PACKAGE_dnsmasq_full_noid=y" >> .config
+        
+        # === mwan3 及其依赖 ===
         echo "CONFIG_PACKAGE_mwan3=y" >> .config
         echo "CONFIG_PACKAGE_luci-app-mwan3=y" >> .config
         echo "CONFIG_PACKAGE_ip-full=y" >> .config
         echo "CONFIG_PACKAGE_ipset=y" >> .config
+        echo "CONFIG_PACKAGE_iptables-mod-ipopt=y" >> .config
         
-        # USB 5G 模组支持
+        # === 5G 模组驱动 ===
         echo "CONFIG_PACKAGE_kmod-usb-net-qmi-wwan=y" >> .config
         echo "CONFIG_PACKAGE_kmod-usb-net-cdc-mbim=y" >> .config
         echo "CONFIG_PACKAGE_kmod-usb-serial-option=y" >> .config
@@ -63,9 +82,16 @@ jobs:
         echo "CONFIG_PACKAGE_luci-proto-qmi=y" >> .config
         echo "CONFIG_PACKAGE_usbutils=y" >> .config
         
-        # 整理依赖
+        # === 执行依赖计算 ===
         make defconfig
-
+        
+        # === 再次检查并强制修正 (防止 defconfig 把它们扔了) ===
+        sed -i 's/# CONFIG_PACKAGE_dnsmasq is not set/CONFIG_PACKAGE_dnsmasq-full=y/' .config
+        sed -i 's/# CONFIG_PACKAGE_luci-app-openclash is not set/CONFIG_PACKAGE_luci-app-openclash=y/' .config
+        
+        # === 最终调试输出 ===
+        echo "=== FINAL CONFIG CHECK ==="
+        grep -E "luci-app-openclash|dnsmasq|mwan3|qmi-wwan|luci-app-store" .config || true
     - name: Download Packages
       run: |
         make download -j8
