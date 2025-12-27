@@ -80,6 +80,12 @@ jobs:
         echo "CONFIG_PACKAGE_kmod-usb-serial-option=y" >> .config
         echo "CONFIG_PACKAGE_kmod-usb-serial-wwan=y" >> .config
         echo "CONFIG_PACKAGE_luci-proto-qmi=y" >> .config
+        
+        # === 随身WiFi 加速驱动 (NCM/RNDIS) ===
+        echo "CONFIG_PACKAGE_kmod-usb-net-cdc-ncm=y" >> .config
+        echo "CONFIG_PACKAGE_kmod-usb-net-huawei-cdc-ncm=y" >> .config
+        echo "CONFIG_PACKAGE_kmod-usb-net-rndis=y" >> .config
+        echo "CONFIG_PACKAGE_luci-proto-ncm=y" >> .config
         echo "CONFIG_PACKAGE_usbutils=y" >> .config
         
         # === 执行依赖计算 ===
