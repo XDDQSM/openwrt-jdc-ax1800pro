@@ -90,6 +90,19 @@ jobs:
         
         # === 执行依赖计算 ===
         make defconfig
+
+          # === PATCH: Force disable hostapd/wpad to fix build error ===
+          echo "Applying hostapd disable patch..."
+          sed -i 's/CONFIG_PACKAGE_wpad-basic-wolfssl=y/# CONFIG_PACKAGE_wpad-basic-wolfssl is not set/' .config
+          sed -i 's/CONFIG_PACKAGE_wpad-openssl=y/# CONFIG_PACKAGE_wpad-openssl is not set/' .config
+          sed -i 's/CONFIG_PACKAGE_wpad-mini=y/# CONFIG_PACKAGE_wpad-mini is not set/' .config
+          sed -i 's/CONFIG_PACKAGE_wpad=y/# CONFIG_PACKAGE_wpad is not set/' .config
+          sed -i 's/CONFIG_PACKAGE_hostapd=y/# CONFIG_PACKAGE_hostapd is not set/' .config
+          sed -i 's/CONFIG_PACKAGE_hostapd-common=y/# CONFIG_PACKAGE_hostapd-common is not set/' .config
+          sed -i 's/CONFIG_PACKAGE_hostapd-utils=y/# CONFIG_PACKAGE_hostapd-utils is not set/' .config
+          # Use wpad-basic without SSL to avoid the he_mu_edca struct error
+          echo "CONFIG_PACKAGE_wpad-basic=y" >> .config
+          # === END PATCH ===
         
         # === 再次检查并强制修正 (防止 defconfig 把它们扔了) ===
         sed -i 's/# CONFIG_PACKAGE_dnsmasq is not set/CONFIG_PACKAGE_dnsmasq-full=y/' .config
